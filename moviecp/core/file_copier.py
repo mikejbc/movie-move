@@ -9,7 +9,7 @@ from loguru import logger
 
 from moviecp.config import NetworkShareConfig
 from moviecp.utils.exceptions import FileCopyError, NetworkShareError
-from moviecp.utils.helpers import ensure_directory, format_file_size, is_mount_accessible
+from moviecp.utils.helpers import ensure_directory, format_file_size, is_mount_accessible, sanitize_filename
 
 
 class FileCopier:
@@ -41,6 +41,9 @@ class FileCopier:
             NetworkShareError: If network share is not accessible.
         """
         try:
+            # Sanitize filename to prevent path traversal attacks
+            filename = sanitize_filename(filename)
+            
             # Verify network share is accessible
             if self.config.verify_mount:
                 if not is_mount_accessible(self.config.mount_path):

@@ -70,6 +70,7 @@ def is_mount_accessible(mount_path: str) -> bool:
 def sanitize_filename(filename: str) -> str:
     """
     Sanitize filename by removing/replacing invalid characters.
+    Prevents path traversal attacks by removing path separators.
 
     Args:
         filename: Original filename.
@@ -77,12 +78,19 @@ def sanitize_filename(filename: str) -> str:
     Returns:
         Sanitized filename.
     """
+    # Remove any path components to prevent directory traversal
+    filename = os.path.basename(filename)
+    
     # Replace invalid characters
     invalid_chars = '<>:"/\\|?*'
     for char in invalid_chars:
         filename = filename.replace(char, "_")
 
     # Remove leading/trailing spaces and dots
-    filename = filename.strip(). strip(".")
+    filename = filename.strip().strip(".")
+    
+    # Prevent empty filename or dangerous names
+    if not filename or filename in (".", "..", ""):
+        filename = "sanitized_file"
 
     return filename
