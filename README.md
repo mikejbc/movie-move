@@ -303,6 +303,33 @@ pytest tests/
 3. Check web dashboard for new movie
 4. Test approve/reject functionality
 
+## Uninstallation
+
+To cleanly remove MovieCP from your Debian server:
+
+```bash
+sudo bash /opt/moviecp/scripts/uninstall.sh
+```
+
+The uninstall script will:
+- Stop and disable both systemd services
+- Remove service files and reload systemd
+- Remove application directory (`/opt/moviecp`)
+- Ask if you want to remove data files (database, logs, config)
+- Ask if you want to remove the `moviecp` system user
+
+**Interactive prompts:**
+- Confirm uninstall
+- Choose to keep or remove data files
+- Choose to keep or remove system user
+
+If you choose to keep data files, you can manually remove them later:
+```bash
+sudo rm -rf /var/lib/moviecp  # Database
+sudo rm -rf /var/log/moviecp  # Logs
+sudo rm -rf /etc/moviecp      # Configuration
+```
+
 ## Security Considerations
 
 - The daemon runs as non-root `moviecp` user
