@@ -25,7 +25,7 @@ class PendingMovie(Base):
         nullable=False,
     )
     error_message = Column(Text, nullable=True)
-    metadata = Column(Text, nullable=True)  # JSON string
+    file_metadata = Column(Text, nullable=True)  # JSON string (renamed from 'metadata' to avoid SQLAlchemy reserved word)
 
     __table_args__ = (
         CheckConstraint(
@@ -47,7 +47,7 @@ class PendingMovie(Base):
             "detected_at": self.detected_at.isoformat() if self.detected_at else None,
             "status": self.status,
             "error_message": self.error_message,
-            "metadata": self.metadata,
+            "metadata": self.file_metadata,
         }
 
 
