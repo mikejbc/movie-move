@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}MovieCP Dashboard{% endblock %}</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+    <style>
+        .movie-card {
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .movie-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+        .processing {
+            opacity: 0.6;
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body class="bg-gray-100">
+    <!-- Navigation -->
+    <nav class="bg-blue-600 text-white shadow-lg">
+        <div class="container mx-auto px-4 py-4">
+            <div class="flex items-center justify-between">
+                <h1 class="text-2xl font-bold">MovieCP Dashboard</h1>
+                <div class="flex gap-4">
+                    <a href="/" class="hover:text-blue-200">Pending</a>
+                    <a href="#" class="hover:text-blue-200" onclick="loadHistory()">History</a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="container mx-auto px-4 py-8">
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="fixed bottom-4 right-4 hidden">
+        <div class="bg-white rounded-lg shadow-lg p-4 max-w-sm">
+            <div id="toast-content" class="flex items-center gap-3">
+                <div id="toast-message"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Toast notification function
+        function showToast(message, type = 'info') {
+            const toast = document.getElementById('toast');
+            const toastMessage = document.getElementById('toast-message');
+            const toastContent = document.getElementById('toast-content');
+
+            // Set icon and color based on type
+            let icon = '';
+            let bgColor = '';
+            if (type === 'success') {
+                icon = '✓';
+                bgColor = 'bg-green-100';
+            } else if (type === 'error') {
+                icon = '✗';
+                bgColor = 'bg-red-100';
+            } else {
+                icon = 'ℹ';
+                bgColor = 'bg-blue-100';
+            }
+
+            toastContent.className = `flex items-center gap-3 p-3 rounded ${bgColor}`;
+            toastMessage.textContent = `${icon} ${message}`;
+
+            toast.classList.remove('hidden');
+
+            setTimeout(() => {
+                toast.classList.add('hidden');
+            }, 3000);
+        }
+
+        // Reload pending movies
+        function reloadPendingMovies() {
+            htmx.ajax('GET', '/api/movies/pending', {
+                target: '#movies-grid',
+                swap: 'innerHTML',
+                select: '#movies-grid'
+            });
+        }
+
+        // Auto-refresh every 30 seconds
+        setInterval(reloadPendingMovies, 30000);
+    </script>
+
+    {% block scripts %}{% endblock %}
+</body>
+</html>

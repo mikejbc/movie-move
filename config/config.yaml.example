@@ -1,0 +1,127 @@
+# MovieCP Configuration File
+# Copy this file to config.yaml and customize for your environment
+
+application:
+  name: "MovieCP Daemon"
+  environment: "production"  # development or production
+
+watcher:
+  # Directory to monitor for new movie files
+  download_folder: "/home/user/downloads/movies"
+
+  # Watch subdirectories recursively
+  watch_recursive: true
+
+  # Minimum file size in MB (files smaller than this are ignored)
+  min_file_size_mb: 500
+
+  # Seconds to wait for file size to stabilize before processing
+  stable_time_seconds: 30
+
+  # Supported video file extensions
+  supported_extensions:
+    - .mkv
+    - .mp4
+    - .avi
+    - .m4v
+    - .mov
+    - .wmv
+    - .flv
+
+  # Patterns to exclude from monitoring
+  exclude_patterns:
+    - "*.part"
+    - "*.tmp"
+    - "*.downloading"
+
+network_share:
+  # Path where network share is mounted
+  mount_path: "/mnt/movies"
+
+  # Subfolder within mount_path to store movies
+  target_folder: "Movies"
+
+  # Automatically attempt to mount if not mounted (requires fstab entry)
+  auto_mount: false
+
+  # Verify mount is accessible before operations
+  verify_mount: true
+
+mnamer:
+  # Path to mnamer executable (use "mnamer" if in PATH)
+  executable_path: "mnamer"
+
+  # Run in batch mode (non-interactive)
+  batch_mode: true
+
+  # Leave empty to use network_share path
+  movie_directory: ""
+
+  # Media type (movie or tv)
+  media_type: "movie"
+
+  # Format for renamed movies
+  movie_format: "{name} ({year})"
+
+  # Additional mnamer arguments
+  extra_args:
+    - "--no-cache"
+
+version_detection:
+  # Enable version detection for duplicate movies
+  enabled: true
+
+  # Format for version suffix (.v2, .v3, etc.)
+  format: ".v{number}"
+
+  # Check for similar filenames, not just exact matches
+  check_similar: true
+
+  # Similarity threshold (0.0 to 1.0)
+  similarity_threshold: 0.9
+
+database:
+  # Path to SQLite database file
+  path: "/var/lib/moviecp/moviecp.db"
+
+  # Enable automatic database backups
+  backup_enabled: true
+
+  # Path to store database backups
+  backup_path: "/var/lib/moviecp/backups"
+
+  # Days to keep old backups
+  backup_retention_days: 30
+
+web:
+  # Host to bind web server (0.0.0.0 for all interfaces)
+  host: "0.0.0.0"
+
+  # Port for web dashboard
+  port: 8080
+
+  # Enable authentication (recommended for production)
+  enable_auth: false
+
+  # CORS origins (restrict in production)
+  cors_origins:
+    - "*"
+
+  # Session secret (change this in production!)
+  session_secret: "CHANGE_ME_IN_PRODUCTION"
+
+logging:
+  # Log level (DEBUG, INFO, WARNING, ERROR, CRITICAL)
+  level: "INFO"
+
+  # Path to log file
+  file: "/var/log/moviecp/moviecp.log"
+
+  # Maximum log file size in MB before rotation
+  max_size_mb: 10
+
+  # Number of rotated log files to keep
+  backup_count: 5
+
+  # Log message format
+  format: "{time:YYYY-MM-DD HH:mm:ss} | {level: <8} | {name}:{function}:{line} - {message}"

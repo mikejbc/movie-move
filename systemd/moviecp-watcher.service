@@ -1,0 +1,22 @@
+[Unit]
+Description=MovieCP File Watcher Service
+After=network.target
+
+[Service]
+Type=simple
+User=moviecp
+Group=moviecp
+WorkingDirectory=/opt/moviecp
+Environment="PATH=/opt/moviecp/venv/bin:/usr/local/bin:/usr/bin:/bin"
+ExecStart=/opt/moviecp/venv/bin/python -m moviecp watcher
+Restart=on-failure
+RestartSec=10
+StandardOutput=journal
+StandardError=journal
+
+# Security settings
+NoNewPrivileges=true
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target

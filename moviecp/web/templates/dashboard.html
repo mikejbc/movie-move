@@ -1,0 +1,185 @@
+{% extends "base.html" %}
+
+{% block content %}
+<!-- Statistics Cards -->
+<div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+    <div class="bg-white rounded-lg shadow p-6">
+        <div class="text-gray-500 text-sm font-semibold mb-1">Pending</div>
+        <div class="text-3xl font-bold text-blue-600">{{ stats.pending }}</div>
+    </div>
+    <div class="bg-white rounded-lg shadow p-6">
+        <div class="text-gray-500 text-sm font-semibold mb-1">Approved</div>
+        <div class="text-3xl font-bold text-green-600">{{ stats.approved }}</div>
+    </div>
+    <div class="bg-white rounded-lg shadow p-6">
+        <div class="text-gray-500 text-sm font-semibold mb-1">Rejected</div>
+        <div class="text-3xl font-bold text-red-600">{{ stats.rejected }}</div>
+    </div>
+    <div class="bg-white rounded-lg shadow p-6">
+        <div class="text-gray-500 text-sm font-semibold mb-1">Total Processed</div>
+        <div class="text-3xl font-bold text-gray-700">{{ stats.total_processed }}</div>
+    </div>
+</div>
+
+<!-- Pending Movies Section -->
+<div class="bg-white rounded-lg shadow">
+    <div class="p-6 border-b border-gray-200">
+        <div class="flex justify-between items-center">
+            <h2 class="text-xl font-semibold text-gray-800">Pending Movies</h2>
+            <button onclick="reloadPendingMovies()" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
+                Refresh
+            </button>
+        </div>
+    </div>
+
+    <div id="movies-container" class="p-6">
+        <div id="movies-grid"
+             hx-get="/api/movies/pending"
+             hx-trigger="load"
+             hx-swap="innerHTML">
+            <!-- Movies will be loaded here -->
+            <div class="text-center text-gray-500 py-8">
+                Loading movies...
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Handle movie approval
+    async function approveMovie(movieId, element) {
+        const card = element.closest('.movie-card');
+        card.classList.add('processing');
+
+        try {
+            const response = await fetch(`/api/movies/${movieId}/approve`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ delete_source: false })
+            });
+
+            const result = await response.json();
+
+            if (result.success) {
+                showToast(result.message || 'Movie approved successfully', 'success');
+                // Remove the card
+                card.remove();
+                // Update stats
+                setTimeout(() => location.reload(), 1000);
+            } else {
+                showToast(result.error || 'Failed to approve movie', 'error');
+                card.classList.remove('processing');
+            }
+        } catch (error) {
+            showToast('Error: ' + error.message, 'error');
+            card.classList.remove('processing');
+        }
+    }
+
+    // Handle movie rejection
+    async function rejectMovie(movieId, element) {
+        if (!confirm('Are you sure you want to reject this movie?')) {
+            return;
+        }
+
+        const card = element.closest('.movie-card');
+        card.classList.add('processing');
+
+        try {
+            const response = await fetch(`/api/movies/${movieId}/reject`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ delete_source: true })
+            });
+
+            const result = await response.json();
+
+            if (result.success) {
+                showToast(result.message || 'Movie rejected', 'success');
+                // Remove the card
+                card.remove();
+                // Update stats
+                setTimeout(() => location.reload(), 1000);
+            } else {
+                showToast(result.error || 'Failed to reject movie', 'error');
+                card.classList.remove('processing');
+            }
+        } catch (error) {
+            showToast('Error: ' + error.message, 'error');
+            card.classList.remove('processing');
+        }
+    }
+
+    // Format file size
+    function formatFileSize(bytes) {
+        const units = ['B', 'KB', 'MB', 'GB', 'TB'];
+        let size = bytes;
+        let unitIndex = 0;
+
+        while (size >= 1024 && unitIndex < units.length - 1) {
+            size /= 1024;
+            unitIndex++;
+        }
+
+        return `${size.toFixed(1)} ${units[unitIndex]}`;
+    }
+
+    // Custom renderer for HTMX response
+    document.body.addEventListener('htmx:afterSwap', function(evt) {
+        if (evt.detail.target.id === 'movies-grid') {
+            const data = JSON.parse(evt.detail.xhr.response);
+
+            if (data.length === 0) {
+                evt.detail.target.innerHTML = '<div class="text-center text-gray-500 py-8">No pending movies</div>';
+                return;
+            }
+
+            const moviesHTML = data.map(movie => `
+                <div class="movie-card bg-gray-50 rounded-lg p-4 border border-gray-200">
+                    <div class="flex justify-between items-start mb-3">
+                        <div class="flex-1">
+                            <h3 class="font-semibold text-gray-800 text-lg mb-1">${escapeHtml(movie.original_filename)}</h3>
+                            <p class="text-sm text-gray-600">${formatFileSize(movie.file_size)}</p>
+                            <p class="text-xs text-gray-500 mt-1">Detected: ${new Date(movie.detected_at).toLocaleString()}</p>
+                        </div>
+                        <span class="px-2 py-1 text-xs font-semibold rounded ${
+                            movie.status === 'pending' ? 'bg-yellow-100 text-yellow-800' : 'bg-gray-100 text-gray-800'
+                        }">${movie.status}</span>
+                    </div>
+
+                    ${movie.error_message ? `
+                        <div class="mb-3 p-2 bg-red-50 border border-red-200 rounded text-sm text-red-700">
+                            ${escapeHtml(movie.error_message)}
+                        </div>
+                    ` : ''}
+
+                    <div class="flex gap-2">
+                        <button onclick="approveMovie(${movie.id}, this)"
+                                class="flex-1 px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 font-medium">
+                            Approve
+                        </button>
+                        <button onclick="rejectMovie(${movie.id}, this)"
+                                class="flex-1 px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 font-medium">
+                            Reject
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+
+            evt.detail.target.innerHTML = `<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">${moviesHTML}</div>`;
+        }
+    });
+
+    function escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+</script>
+{% endblock %}
