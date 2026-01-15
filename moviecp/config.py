@@ -4,7 +4,8 @@ from pathlib import Path
 from typing import List, Optional
 
 import yaml
-from pydantic import BaseModel, Field, field_validator
+from loguru import logger
+from pydantic import BaseModel, Field, field_validator, model_validator
 
 
 class WatcherConfig(BaseModel):
@@ -76,6 +77,21 @@ class WebConfig(BaseModel):
     enable_auth: bool = False
     cors_origins: List[str] = ["*"]
     session_secret: str = "CHANGE_ME_IN_PRODUCTION"
+    
+    @model_validator(mode='after')
+    def validate_session_secret(self) -> 'WebConfig':
+        """Validate and generate session secret if not provided."""
+        if self.session_secret == "CHANGE_ME_IN_PRODUCTION":
+            import secrets
+            logger.warning(
+                "No session_secret configured. Generating random secret. "
+                "This will invalidate sessions on restart. "
+                "Please set a persistent secret in production!"
+            )
+            self.session_secret = secrets.token_urlsafe(32)
+        elif len(self.session_secret) < 32:
+            raise ValueError("session_secret must be at least 32 characters long")
+        return self
 
 
 class LoggingConfig(BaseModel):

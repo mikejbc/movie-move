@@ -54,7 +54,7 @@ class FileProcessor:
                     original_filename=file_info["filename"],
                     file_size=file_info["size"],
                     status="pending",
-                    metadata=json.dumps(metadata),
+                    file_metadata=json.dumps(metadata),
                 )
 
                 session.add(pending_movie)

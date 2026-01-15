@@ -61,6 +61,10 @@ async def get_processed_movies(limit: int = 50):
 async def approve_movie(movie_id: int, request: ApproveRequest = ApproveRequest()):
     """Approve a pending movie."""
     try:
+        # Validate movie_id is positive
+        if movie_id <= 0:
+            return ActionResponse(success=False, error="Invalid movie ID")
+        
         logger.info(f"API: Approving movie {movie_id}")
         manager = get_movie_manager()
         result = manager.approve_movie(movie_id, delete_source=request.delete_source)
@@ -76,13 +80,18 @@ async def approve_movie(movie_id: int, request: ApproveRequest = ApproveRequest(
 
     except Exception as e:
         logger.error(f"Error approving movie {movie_id}: {e}")
-        return ActionResponse(success=False, error=str(e))
+        # Don't expose internal error details to client
+        return ActionResponse(success=False, error="Failed to approve movie")
 
 
 @router.post("/movies/{movie_id}/reject", response_model=ActionResponse)
 async def reject_movie(movie_id: int, request: RejectRequest = RejectRequest()):
     """Reject a pending movie."""
     try:
+        # Validate movie_id is positive
+        if movie_id <= 0:
+            return ActionResponse(success=False, error="Invalid movie ID")
+        
         logger.info(f"API: Rejecting movie {movie_id}")
         manager = get_movie_manager()
         result = manager.reject_movie(movie_id, delete_source=request.delete_source)
@@ -98,7 +107,8 @@ async def reject_movie(movie_id: int, request: RejectRequest = RejectRequest()):
 
     except Exception as e:
         logger.error(f"Error rejecting movie {movie_id}: {e}")
-        return ActionResponse(success=False, error=str(e))
+        # Don't expose internal error details to client
+        return ActionResponse(success=False, error="Failed to reject movie")
 
 
 @router.get("/stats", response_model=StatsSchema)

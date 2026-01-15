@@ -37,6 +37,13 @@ class MovieRenamer:
             MnamerError: If mnamer execution fails critically.
         """
         try:
+            # Validate file path exists and is a file
+            if not os.path.exists(file_path):
+                raise MnamerError(f"File does not exist: {file_path}")
+            
+            if not os.path.isfile(file_path):
+                raise MnamerError(f"Path is not a file: {file_path}")
+            
             # Build mnamer command
             cmd = [self.config.executable_path]
 
@@ -54,17 +61,18 @@ class MovieRenamer:
             # Add extra args
             cmd.extend(self.config.extra_args)
 
-            # Add the file path
+            # Add the file path (already validated)
             cmd.append(file_path)
 
             logger.info(f"Running mnamer: {' '.join(cmd)}")
 
-            # Run mnamer
+            # Run mnamer with shell=False to prevent command injection
             result = subprocess.run(
                 cmd,
                 capture_output=True,
                 text=True,
                 timeout=60,  # 1 minute timeout
+                shell=False,  # Explicitly set to False for security
             )
 
             output = result.stdout + result.stderr
